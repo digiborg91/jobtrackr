@@ -31,20 +31,27 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
 
-  /* Configure projects for major browsers */
   projects: [
     {
-      name: 'chromium',
+      // No browser at all — these tests only ever use the `request` fixture.
+      name: 'api',
+      testDir: './specs/api',
+    },
+    {
+      name: 'ui',
+      testDir: './specs/ui',
       use: { ...devices['Desktop Chrome'] },
     },
 
-    /* Add these back once you want cross-browser coverage: */
+    /* Add these back once you want cross-browser UI coverage: */
     // {
     //   name: 'firefox',
+    //   testDir: './specs/ui',
     //   use: { ...devices['Desktop Firefox'] },
     // },
     // {
     //   name: 'webkit',
+    //   testDir: './specs/ui',
     //   use: { ...devices['Desktop Safari'] },
     // },
   ],

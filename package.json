@@ -11,8 +11,10 @@
     "preview": "vite preview",
     "db:migrate": "node --env-file=.env scripts/migrate.mjs",
     "e2e": "playwright test",
-    "e2e:headed": "playwright test --headed",
+    "e2e:browser": "playwright test --project=ui",
+    "e2e:headed": "playwright test --project=ui --headed",
     "e2e:ui": "playwright test --ui",
+    "e2e:api": "playwright test --project=api",
     "e2e:report": "playwright show-report"
   },
   "dependencies": {
