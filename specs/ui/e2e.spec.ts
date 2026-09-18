@@ -17,7 +17,10 @@ test.describe('Inventory assignment', () => {
 
         await loginPage.goto();
         await loginPage.login(process.env.EMAIL!, process.env.PASSWORD!);
-        await expect(page).toHaveURL(/\/board$/);
+        // Longer timeout here specifically: many tests share one real account,
+        // so under parallel load a login occasionally takes longer than the
+        // default 5s to redirect — it still succeeds, just not that fast.
+        await expect(page).toHaveURL(/\/board$/, { timeout: 15_000 });
     });
 
     test ('add a new application', async ({ page, testApplication }) => {

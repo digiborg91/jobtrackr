@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # Adds a "Run workflow" button on the Actions tab, for kicking off the
+  # suite on demand — e.g. after a manual Netlify redeploy that wasn't
+  # triggered by a git push, so wouldn't otherwise run CI.
+  workflow_dispatch: {}
 
 jobs:
   test:
