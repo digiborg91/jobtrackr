@@ -13,6 +13,19 @@ export default tseslint.config(
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
+  },
+  {
+    // react-hooks/react-refresh only make sense for React component code —
+    // scoped to src/ so they never misfire on Playwright fixtures elsewhere
+    // (which use a `use` callback param that isn't a React hook at all,
+    // regardless of which directory they happen to live in).
+    files: ['src/**/*.{ts,tsx}'],
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
@@ -23,18 +36,13 @@ export default tseslint.config(
         'warn',
         { allowConstantExport: true },
       ],
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-      ],
     },
   },
   {
-    // Playwright fixtures use `({}, use) => ...` and a `use` callback param,
-    // which the React-specific rules below misidentify as hook violations.
-    files: ['tests/**/*.ts', 'playwright.config.ts'],
+    // Playwright fixtures use `async ({}, use) => ...` — the empty
+    // destructuring pattern is idiomatic here, not a mistake.
+    files: ['fixtures/**/*.ts', 'specs/**/*.ts', 'playwright.config.ts'],
     rules: {
-      'react-hooks/rules-of-hooks': 'off',
       'no-empty-pattern': 'off',
     },
   },

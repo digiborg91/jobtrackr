@@ -1,0 +1,42 @@
+import type { APIRequestContext, APIResponse } from '@playwright/test';
+
+export interface ApplicationPayload {
+    company: string;
+    role: string;
+    jobUrl?: string | null;
+    salaryMin?: number | null;
+    salaryMax?: number | null;
+    location?: string | null;
+    status?: string;
+    tags?: string[];
+    nextFollowUp?: string | null;
+}
+
+export class ApplicationsClient {
+    constructor(private request: APIRequestContext) {}
+
+    async create(data: Partial<ApplicationPayload>): Promise<APIResponse> {
+        return this.request.post('/api/applications', { data });
+    }
+
+    async get(id: string): Promise<APIResponse> {
+        return this.request.get(`/api/applications/${id}`);
+    }
+
+    async list(query: Record<string, string> = {}): Promise<APIResponse> {
+        const queryString = new URLSearchParams(query).toString();
+        return this.request.get(`/api/applications${queryString ? `?${queryString}` : ''}`);
+    }
+
+    async update(id: string, data: Partial<ApplicationPayload>): Promise<APIResponse> {
+        return this.request.patch(`/api/applications/${id}`, { data });
+    }
+
+    async updateStatus(id: string, status: string): Promise<APIResponse> {
+        return this.request.patch(`/api/applications/${id}/status`, { data: { status } });
+    }
+
+    async delete(id: string): Promise<APIResponse> {
+        return this.request.delete(`/api/applications/${id}`);
+    }
+}
