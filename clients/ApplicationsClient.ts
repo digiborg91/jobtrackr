@@ -8,6 +8,7 @@ export interface ApplicationPayload {
     salaryMax?: number | null;
     location?: string | null;
     status?: string;
+    source?: string;
     tags?: string[];
     nextFollowUp?: string | null;
 }

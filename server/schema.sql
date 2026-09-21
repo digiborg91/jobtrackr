@@ -19,11 +19,25 @@ create table if not exists applications (
   location text,
   status text not null default 'wishlist'
     check (status in ('wishlist', 'applied', 'interviewing', 'offer', 'rejected')),
+  source text not null default 'other'
+    check (source in ('linkedin', 'referral', 'company_website', 'job_board', 'recruiter', 'other')),
   tags text[] not null default '{}',
   next_follow_up date,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Backfill path for a database that already has `applications` from before the
+-- `source` field existed (e.g. production) — `create table if not exists`
+-- above is a no-op there, so the column has to be added and back-filled
+-- explicitly rather than assumed to exist.
+alter table applications add column if not exists source text;
+update applications set source = 'other' where source is null;
+alter table applications alter column source set default 'other';
+alter table applications alter column source set not null;
+alter table applications drop constraint if exists applications_source_check;
+alter table applications add constraint applications_source_check
+  check (source in ('linkedin', 'referral', 'company_website', 'job_board', 'recruiter', 'other'));
 
 create index if not exists applications_user_id_idx on applications(user_id);
 create index if not exists applications_status_idx on applications(user_id, status);

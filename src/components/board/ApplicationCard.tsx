@@ -3,6 +3,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Calendar, ExternalLink, GripVertical } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { SOURCE_LABELS } from "@/types";
 import type { JobApplication } from "@/types";
 
 function formatSalary(app: JobApplication) {
@@ -62,6 +63,9 @@ export function ApplicationCard({ application, onOpen, dragging }: ApplicationCa
       </div>
       <p className="text-sm text-muted-foreground">{application.company}</p>
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <Badge data-testid="application-source" variant="outline" className="font-normal">
+          {SOURCE_LABELS[application.source]}
+        </Badge>
         {salary && (
           <Badge variant="secondary" className="font-normal">
             {salary}

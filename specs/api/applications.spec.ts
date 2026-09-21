@@ -18,6 +18,8 @@ test.describe('Applications API', () => {
             jobUrl: testApplication.jobUrl,
             salaryMin: Number(testApplication.salaryMin),
             salaryMax: Number(testApplication.salaryMax),
+            location: testApplication.location,
+            source: testApplication.source,
             tags: testApplication.tags.split(','),
             nextFollowUp: testApplication.followUpDate,
         });
@@ -41,6 +43,7 @@ test.describe('Applications API', () => {
         const createResponse = await applicationsClient.create({
             company: testApplication.company,
             role: testApplication.role,
+            source: testApplication.source,
         });
         const created = await createResponse.json();
 
@@ -66,6 +69,7 @@ test.describe('Applications API', () => {
         const createResponse = await applicationsClient.create({
             company: testApplication.company,
             role: testApplication.role,
+            source: testApplication.source,
         });
         const created = await createResponse.json();
         expect(created.status).toBe('wishlist');
@@ -93,6 +97,7 @@ test.describe('Applications API', () => {
         const createResponse = await applicationsClient.create({
             company: testApplication.company,
             role: testApplication.role,
+            source: testApplication.source,
         });
         const created = await createResponse.json();
 
@@ -111,8 +116,9 @@ test.describe('Applications API', () => {
         const other = uniqueApplication();
 
         const [matchingResponse, otherResponse] = await Promise.all([
-            applicationsClient.create({ company: matching.company, role: matching.role }),
-            applicationsClient.create({ company: other.company, role: other.role }),
+            applicationsClient.create({ company: matching.company, role: matching.role, source: matching.source }),
+            applicationsClient.create({ company: other.company, role: other.role, source: other.source }),
+            
         ]);
         const matchingApp: ApplicationSummary = await matchingResponse.json();
         const otherApp: ApplicationSummary = await otherResponse.json();
@@ -137,8 +143,8 @@ test.describe('Applications API', () => {
         const untagged = uniqueApplication();
 
         const [taggedResponse, untaggedResponse] = await Promise.all([
-            applicationsClient.create({ company: tagged.company, role: tagged.role, tags: ['unique-tag'] }),
-            applicationsClient.create({ company: untagged.company, role: untagged.role, tags: ['other-tag'] }),
+            applicationsClient.create({ company: tagged.company, role: tagged.role, source: tagged.source, tags: ['unique-tag'] }),
+            applicationsClient.create({ company: untagged.company, role: untagged.role, source: untagged.source, tags: ['other-tag'] }),
         ]);
         const taggedApp: ApplicationSummary = await taggedResponse.json();
         const untaggedApp: ApplicationSummary = await untaggedResponse.json();
@@ -165,7 +171,7 @@ test.describe('Applications API', () => {
         const seeds = [uniqueApplication(), uniqueApplication(), uniqueApplication()];
         const created: ApplicationSummary[] = [];
         for (const seed of seeds) {
-            const response = await applicationsClient.create({ company: seed.company, role: seed.role });
+            const response = await applicationsClient.create({ company: seed.company, role: seed.role, source: seed.source });
             created.push(await response.json());
         }
         const knownIds = created.map((app) => app.id);

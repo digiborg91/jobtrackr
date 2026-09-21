@@ -10,6 +10,7 @@ export const applicationsRouter = Router();
 applicationsRouter.use(requireAuth);
 
 const STATUSES = ["wishlist", "applied", "interviewing", "offer", "rejected"] as const;
+const SOURCES = ["linkedin", "referral", "company_website", "job_board", "recruiter", "other"] as const;
 
 const listQuerySchema = z.object({
   status: z.enum(STATUSES).optional(),
@@ -28,6 +29,7 @@ const applicationInputSchema = z.object({
   salaryMax: z.number().int().nonnegative().nullable().optional(),
   location: z.string().trim().nullable().optional(),
   status: z.enum(STATUSES).optional(),
+  source: z.enum(SOURCES, { required_error: "Source is required", invalid_type_error: "Source is required" }),
   tags: z.array(z.string().trim().min(1)).optional(),
   nextFollowUp: z.string().date().nullable().optional(),
 });
@@ -45,6 +47,7 @@ interface ApplicationRow {
   salary_max: number | null;
   location: string | null;
   status: string;
+  source: string;
   tags: string[];
   next_follow_up: string | null;
   created_at: string;
@@ -105,8 +108,8 @@ applicationsRouter.post(
 
     const row = await queryOne<ApplicationRow>(
       `insert into applications
-        (user_id, company, role, job_url, salary_min, salary_max, location, status, tags, next_follow_up)
-       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        (user_id, company, role, job_url, salary_min, salary_max, location, status, source, tags, next_follow_up)
+       values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        returning *`,
       [
         req.userId,
@@ -117,6 +120,7 @@ applicationsRouter.post(
         input.salaryMax ?? null,
         input.location ?? null,
         input.status ?? "wishlist",
+        input.source,
         input.tags ?? [],
         input.nextFollowUp ?? null,
       ],
@@ -175,6 +179,7 @@ applicationsRouter.patch(
       salary_max: input.salaryMax,
       location: input.location,
       status: input.status,
+      source: input.source,
       tags: input.tags,
       next_follow_up: input.nextFollowUp,
     };
