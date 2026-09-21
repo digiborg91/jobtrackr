@@ -1,4 +1,5 @@
 import { type Locator, type Page, } from '@playwright/test';
+import { expect } from '../fixtures/auth.fixture';
 
 export class BoardPage {
 
@@ -80,5 +81,6 @@ export class BoardPage {
         await this.page.keyboard.press(direction);
         await this.page.waitForTimeout(200);
         await this.page.keyboard.press('Space');
+        await expect(this.page.getByRole('button', { name: `Move ${role} at ${company}`, exact: true })).toHaveCount(1);
     }
 }

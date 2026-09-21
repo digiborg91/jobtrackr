@@ -21,6 +21,32 @@ export const STATUS_LABELS: Record<ApplicationStatus, string> = {
   rejected: "Rejected",
 };
 
+export type ApplicationSource =
+  | "linkedin"
+  | "referral"
+  | "company_website"
+  | "job_board"
+  | "recruiter"
+  | "other";
+
+export const APPLICATION_SOURCES: ApplicationSource[] = [
+  "linkedin",
+  "referral",
+  "company_website",
+  "job_board",
+  "recruiter",
+  "other",
+];
+
+export const SOURCE_LABELS: Record<ApplicationSource, string> = {
+  linkedin: "LinkedIn",
+  referral: "Referral",
+  company_website: "Company website",
+  job_board: "Job board",
+  recruiter: "Recruiter",
+  other: "Other",
+};
+
 export interface User {
   id: string;
   email: string;
@@ -36,6 +62,7 @@ export interface JobApplication {
   salaryMax: number | null;
   location: string | null;
   status: ApplicationStatus;
+  source: ApplicationSource;
   tags: string[];
   nextFollowUp: string | null;
   createdAt: string;

@@ -24,14 +24,17 @@ import {
 import { NotesThread } from "@/components/board/NotesThread";
 import { applicationsApi, type ApplicationInput } from "@/api/applications";
 import { useToast } from "@/hooks/use-toast";
-import { APPLICATION_STATUSES, STATUS_LABELS } from "@/types";
-import type { ApplicationStatus, JobApplication, Paginated } from "@/types";
+import { APPLICATION_SOURCES, APPLICATION_STATUSES, SOURCE_LABELS, STATUS_LABELS } from "@/types";
+import type { ApplicationSource, ApplicationStatus, JobApplication, Paginated } from "@/types";
 
 const schema = z
   .object({
     company: z.string().min(1, "Company is required"),
     role: z.string().min(1, "Role is required"),
     status: z.enum(APPLICATION_STATUSES as [ApplicationStatus, ...ApplicationStatus[]]),
+    source: z.enum(APPLICATION_SOURCES as [ApplicationSource, ...ApplicationSource[]], {
+      errorMap: () => ({ message: "Source is required" }),
+    }),
     jobUrl: z.union([z.literal(""), z.string().url("Enter a valid URL")]),
     location: z.string(),
     salaryMin: z.union([z.literal(""), z.coerce.number().nonnegative()]),
@@ -60,6 +63,9 @@ function toFormValues(application: JobApplication | null, defaultStatus: Applica
       company: "",
       role: "",
       status: defaultStatus,
+      // No sensible default — the field is mandatory, so the select starts
+      // empty and the user has to actively choose one.
+      source: "" as FormValues["source"],
       jobUrl: "",
       location: "",
       salaryMin: "",
@@ -72,6 +78,7 @@ function toFormValues(application: JobApplication | null, defaultStatus: Applica
     company: application.company,
     role: application.role,
     status: application.status,
+    source: application.source,
     jobUrl: application.jobUrl ?? "",
     location: application.location ?? "",
     salaryMin: application.salaryMin ?? "",
@@ -154,6 +161,7 @@ export function ApplicationDialog({
       company: values.company,
       role: values.role,
       status: values.status,
+      source: values.source,
       jobUrl: values.jobUrl || null,
       location: values.location || null,
       salaryMin: values.salaryMin === "" ? null : Number(values.salaryMin),
@@ -213,6 +221,29 @@ export function ApplicationDialog({
               <Label htmlFor="location">Location</Label>
               <Input id="location" placeholder="Remote" {...register("location")} />
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="source">Source</Label>
+            <Controller
+              name="source"
+              control={control}
+              render={({ field }) => (
+                <Select value={field.value} onValueChange={field.onChange}>
+                  <SelectTrigger id="source">
+                    <SelectValue placeholder="Select a source…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {APPLICATION_SOURCES.map((source) => (
+                      <SelectItem key={source} value={source}>
+                        {SOURCE_LABELS[source]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.source && <p role="alert" className="text-xs text-destructive">{errors.source.message}</p>}
           </div>
 
           <div className="space-y-1.5">

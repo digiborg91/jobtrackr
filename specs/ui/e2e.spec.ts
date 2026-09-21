@@ -23,7 +23,7 @@ test.describe('Inventory assignment', () => {
         await expect(page).toHaveURL(/\/board$/, { timeout: 15_000 });
     });
 
-    test ('add a new application', async ({ page, testApplication }) => {
+    test('add a new application', async ({ page, testApplication }) => {
         await boardPage.createNewApplication();
         await applicationDialoguePage.createNewApplication(testApplication, 'Applied');
 
@@ -64,7 +64,7 @@ test.describe('Inventory assignment', () => {
         // Creation isn't what's under test here, so seed it directly via the
         // API — faster, and keeps the test focused on the update behaviour.
         await apiContext.post('/api/applications', {
-            data: { company: testApplication.company, role: testApplication.role },
+            data: { company: testApplication.company, role: testApplication.role, source: testApplication.source },
         });
         await page.reload();
 
@@ -81,7 +81,7 @@ test.describe('Inventory assignment', () => {
 
     test('Delete an existing application', async ({ page, apiContext, testApplication }) => {
         await apiContext.post('/api/applications', {
-            data: { company: testApplication.company, role: testApplication.role },
+            data: { company: testApplication.company, role: testApplication.role, source: testApplication.source },
         });
         await page.reload();
 
@@ -101,6 +101,9 @@ test.describe('Inventory assignment', () => {
                 salaryMin: Number(testApplication.salaryMin),
                 salaryMax: Number(testApplication.salaryMax),
                 tags: testApplication.tags.split(','),
+                location: testApplication.location,
+                source: testApplication.source,
+                nextFollowUp: testApplication.followUpDate,
             },
         });
         await page.reload();
@@ -121,8 +124,8 @@ test.describe('Inventory assignment', () => {
         const matching = uniqueApplication();
         const other = uniqueApplication();
         const created = await Promise.all([
-            apiContext.post('/api/applications', { data: { company: matching.company, role: matching.role } }),
-            apiContext.post('/api/applications', { data: { company: other.company, role: other.role } }),
+            apiContext.post('/api/applications', { data: { company: matching.company, role: matching.role, source: matching.source } }),
+            apiContext.post('/api/applications', { data: { company: other.company, role: other.role, source: other.source } }),
         ]);
         const [matchingApp, otherApp] = await Promise.all(created.map((r) => r.json()));
 
@@ -143,10 +146,10 @@ test.describe('Inventory assignment', () => {
         const untagged = uniqueApplication();
         const created = await Promise.all([
             apiContext.post('/api/applications', {
-                data: { company: tagged.company, role: tagged.role, tags: ['unique-tag'] },
+                data: { company: tagged.company, role: tagged.role, source: tagged.source, tags: ['unique-tag'] },
             }),
             apiContext.post('/api/applications', {
-                data: { company: untagged.company, role: untagged.role, tags: ['other-tag'] },
+                data: { company: untagged.company, role: untagged.role, source: untagged.source, tags: ['other-tag'] },
             }),
         ]);
         const [taggedApp, untaggedApp] = await Promise.all(created.map((r) => r.json()));
@@ -168,10 +171,10 @@ test.describe('Inventory assignment', () => {
         // known createdAt — required for the oldest/newest assertions to mean
         // anything.
         const apps = [uniqueApplication(), uniqueApplication(), uniqueApplication()];
-        const created: { id: string; company: string }[] = [];
+        const created: { id: string; company: string; source: string }[] = [];
         for (const app of apps) {
             const response = await apiContext.post('/api/applications', {
-                data: { company: app.company, role: app.role },
+                data: { company: app.company, role: app.role, source: app.source },
             });
             created.push(await response.json());
         }

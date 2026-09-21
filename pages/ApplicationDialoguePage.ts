@@ -1,6 +1,15 @@
 import { type Locator, type Page, } from '@playwright/test';
 import type { ApplicationData } from '../fixtures/test-data';
+    
 
+const SOURCE_LABELS: Record<string, string> = {
+        linkedin: 'LinkedIn',
+        referral: 'Referral',
+        company_website: 'Company website',
+        job_board: 'Job board',
+        recruiter: 'Recruiter',
+        other: 'Other',
+    };
 export class ApplicationDialoguePage {
 
     readonly page: Page;
@@ -8,6 +17,8 @@ export class ApplicationDialoguePage {
     readonly companyInput: Locator;
     readonly roleInput: Locator;
     readonly statusDropdown: Locator;
+    readonly locationInput: Locator;
+    readonly sourceDropdown: Locator;
     readonly joblistingURLInput: Locator;
     readonly salaryMinInput: Locator;
     readonly salaryMaxInput: Locator;
@@ -16,6 +27,8 @@ export class ApplicationDialoguePage {
     readonly addApplicationButton: Locator;
     readonly saveChangesButton: Locator;
     readonly deleteButton: Locator;
+
+
 
     constructor (page: Page) {
         this.page = page;
@@ -28,6 +41,8 @@ export class ApplicationDialoguePage {
         // Status is a custom Radix dropdown, not a native <select> — this locator
         // is the clickable trigger button, not something selectOption() can drive.
         this.statusDropdown = this.dialog.getByLabel('Status');
+        this.sourceDropdown = this.dialog.getByLabel('Source');
+        this.locationInput = this.dialog.getByLabel('Location');
         this.joblistingURLInput = this.dialog.getByLabel('Job listing URL');
         this.salaryMinInput = this.dialog.getByLabel('Salary min');
         this.salaryMaxInput = this.dialog.getByLabel('Salary max');
@@ -48,10 +63,17 @@ export class ApplicationDialoguePage {
         await this.page.getByRole('option', { name: status }).click();
     }
 
+    async selectSource(source: string) {
+        await this.sourceDropdown.click();
+        await this.page.getByRole('option', { name: SOURCE_LABELS[source] }).click();
+    }
+
     async createNewApplication(data: ApplicationData, status: string) {
         await this.companyInput.fill(data.company);
         await this.roleInput.fill(data.role);
         await this.selectStatus(status);
+        await this.selectSource(data.source);
+        await this.locationInput.fill(data.location);
         await this.joblistingURLInput.fill(data.jobUrl);
         await this.salaryMinInput.fill(data.salaryMin);
         await this.salaryMaxInput.fill(data.salaryMax);

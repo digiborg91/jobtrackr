@@ -1,5 +1,5 @@
 import { api } from "@/api/client";
-import type { ApplicationStatus, JobApplication, Paginated } from "@/types";
+import type { ApplicationSource, ApplicationStatus, JobApplication, Paginated } from "@/types";
 
 export interface ApplicationFilters {
   status?: ApplicationStatus;
@@ -18,6 +18,7 @@ export interface ApplicationInput {
   salaryMax?: number | null;
   location?: string | null;
   status?: ApplicationStatus;
+  source: ApplicationSource;
   tags?: string[];
   nextFollowUp?: string | null;
 }
