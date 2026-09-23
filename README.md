@@ -6,7 +6,7 @@ A personal job-application tracker (Kanban board: Wishlist → Applied → Inter
 
 - **Frontend:** Vite + React + TypeScript + Tailwind + Radix-based UI components, TanStack Query, React Hook Form + Zod, `@dnd-kit` (keyboard-operable drag-and-drop).
 - **Backend:** Express app wrapped as a single Netlify Function (`netlify/functions/api.ts`), exposed at `/api/*`.
-- **Database:** Postgres (Neon free tier in production; any local/Docker Postgres for development), plain SQL via `pg` — no ORM.
+- **Database:** Postgres (Supabase free tier in production; any local/Docker Postgres for development), plain SQL via `pg` — no ORM.
 - **Auth:** email/password, JWT in an httpOnly cookie.
 - **Tests:** Playwright — API tests (`tests/api`) and UI tests (`tests/ui`).
 
@@ -14,7 +14,7 @@ A personal job-application tracker (Kanban board: Wishlist → Applied → Inter
 
 1. **Get a Postgres database.** Either:
    - Run one locally/in Docker: `docker run --name jobtrackr-db -e POSTGRES_PASSWORD=postgres -p 5433:5432 -d postgres:16`, then use `postgres://postgres:postgres@localhost:5433/postgres` (port 5433 avoids clashing with a native Postgres install already using 5432), or
-   - Create a free [Neon](https://neon.tech) project and copy its connection string.
+   - Create a free [Supabase](https://supabase.com) project and copy its connection string.
 2. **Configure environment variables:**
    ```
    cp .env.example .env
@@ -47,6 +47,6 @@ Playwright's `webServer` config starts `netlify dev` automatically, so `npm test
 
 ## Deployment
 
-Netlify's GitHub integration handles deploys: connect this repo in the Netlify dashboard, set `DATABASE_URL` and `JWT_SECRET` as site environment variables (pointing at your production Neon database), and every push to `main` deploys automatically, with a Deploy Preview generated for every pull request.
+Netlify's GitHub integration handles deploys: connect this repo in the Netlify dashboard, set `DATABASE_URL` and `JWT_SECRET` as site environment variables (pointing at your production Supabase database), and every push to `main` deploys automatically, with a Deploy Preview generated for every pull request.
 
 GitHub Actions (`.github/workflows/ci.yml`) runs the full Playwright suite against a throwaway Postgres service container on every push and pull request, independent of the production database.
