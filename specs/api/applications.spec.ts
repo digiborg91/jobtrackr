@@ -2,6 +2,7 @@ import { faker } from '@faker-js/faker';
 import { test, expect } from '../../fixtures/auth.fixture';
 import { uniqueApplication } from '../../fixtures/test-data';
 import { ApplicationsClient } from '../../clients/ApplicationsClient';
+import { request as playwrightRequest } from '@playwright/test';
 
 interface ApplicationSummary {
     id: string;
@@ -224,10 +225,107 @@ test.describe('Applications API', () => {
         const updateFavoriteResponse = await applicationsClient.updateFavorite(responseBody.id, true);//Update
         const updateFavoriteBody = await updateFavoriteResponse.json(); //Capture the response 
             expect(updateFavoriteBody.isFavorite).toBe(true); // Assert ? 
+    })
+    
+    test('Ensure a user can edit notes for an application', async ({ apiContext, testApplication }) => {
+        const applicationsClient = new ApplicationsClient(apiContext);
+        //Creaste a application
+        const createResponse = await applicationsClient.create({
+            company: testApplication.company,
+            role: testApplication.role,
+            source: testApplication.source,
+            });
+            
+            //Assert the created application has created with note
+
+        const responsebody = await createResponse.json();
+
+        const noteResponse = await apiContext.post(`/api/applications/${responsebody.id}/notes`, { data: { body: testApplication.notes } });
+        const note = await noteResponse.json();
+        expect(note.body).toBe(testApplication.notes);
+        expect(noteResponse.status()).toBe(201);
+
+        //Update the application to edit notes - update the patch with an optional parameter notes
+        const updateNotesResponse = await applicationsClient.editNotes(note.id, "Updated Notes");//Update
+        const updateNotesBody = await updateNotesResponse.json();
+        expect(updateNotesBody.body).toBe("Updated Notes"); 
+        expect(updateNotesResponse.status()).toBe(200);
+
+    })
+
+    test('Ensure a user cannot edit notes for an application on an empty body', async ({ apiContext, testApplication }) => {
+        const applicationsClient = new ApplicationsClient(apiContext);
+
+        const createResponse = await applicationsClient.create({
+            company: testApplication.company,
+            role: testApplication.role,
+            source: testApplication.source,
+        });
+        const responsebody = await createResponse.json();
+
+        const noteResponse = await apiContext.post(`/api/applications/${responsebody.id}/notes`, { data: { body: testApplication.notes } });
+        const note = await noteResponse.json();
+        expect(note.body).toBe(testApplication.notes);
+        expect(noteResponse.status()).toBe(201);
+
+        //Update notes on an application of an empty body
+        const updateNotesResponse = await applicationsClient.editNotes(note.id, "");//Update
+        expect(updateNotesResponse.status()).toBe(400);
+
+    })
+
+    test('Ensure a user cannot edit notes for an application of another user', async ({ apiContext, testApplication }) => {
+        const applicationsClient = new ApplicationsClient(apiContext);
+
+        const createResponse = await applicationsClient.create({
+            company: testApplication.company,
+            role: testApplication.role,
+            source: testApplication.source,
+        });
 
 
+        const responsebody = await createResponse.json();
+
+        const noteResponse = await apiContext.post(`/api/applications/${responsebody.id}/notes`, { data: { body: testApplication.notes } });
+        const note = await noteResponse.json();
+        expect(note.body).toBe(testApplication.notes);
+        expect(noteResponse.status()).toBe(201);
 
 
+        
+        // Register + log in as a second, completely separate user
+        const otherUserContext = await playwrightRequest.newContext({ baseURL: 'http://localhost:5174' });
+        await otherUserContext.post('/api/auth/register', {
+            data: { name: 'Other User', email: `other-${Date.now()}@example.com`, password: 'password123' },
+        });
+
+        const otherApplicationsClient = new ApplicationsClient(otherUserContext);
+
+        const updateNotesResponse = await otherApplicationsClient.editNotes(note.id, "Updated Notes");
+        expect(updateNotesResponse.status()).toBe(404);     
+
+        await otherUserContext.dispose();
+
+    })
+
+    test('Ensure a user cannot edit notes for a non-existent application', async ({ apiContext, testApplication }) => {
+        const applicationsClient = new ApplicationsClient(apiContext);
+
+        const createResponse = await applicationsClient.create({
+            company: testApplication.company,
+            role: testApplication.role,
+            source: testApplication.source,
+        });
+        const responsebody = await createResponse.json();
+
+        const noteResponse = await apiContext.post(`/api/applications/${responsebody.id}/notes`, { data: { body: testApplication.notes } });
+        const note = await noteResponse.json();
+        expect(note.body).toBe(testApplication.notes);
+        expect(noteResponse.status()).toBe(201);
+
+        //Application is added.  now update a non existant application adn return 403 
+        const updateNotesResponse = await applicationsClient.editNotes("non-existent-id", "Updated Notes");
+        expect(updateNotesResponse.status()).toBe(500);
 
     })
 });

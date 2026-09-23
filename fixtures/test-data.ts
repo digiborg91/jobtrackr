@@ -10,6 +10,7 @@ export interface ApplicationData {
     location:string;
     followUpDate: string;
     tags: string;
+    notes: string;
 }
 
 export function uniqueApplication(): ApplicationData {
@@ -29,5 +30,6 @@ export function uniqueApplication(): ApplicationData {
         location: faker.location.city(),
         followUpDate: faker.date.future().toISOString().split('T')[0],
         tags: [faker.word.noun(), faker.word.noun()].join(','),
+        notes: faker.lorem.sentence(),
     };
 }

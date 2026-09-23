@@ -57,6 +57,28 @@ notesRouter.post(
   }),
 );
 
+notesRouter.patch(
+  "/notes/:noteId",
+  validateBody(noteInputSchema),
+  asyncHandler(async (req, res) => {
+    const noteId = String(req.params.noteId);
+    const { body } = req.body as z.infer<typeof noteInputSchema>;
+
+    const row = await queryOne<NoteRow>(
+      `update notes
+       set body = $1
+       from applications
+       where notes.id = $2
+         and notes.application_id = applications.id
+         and applications.user_id = $3
+       returning notes.*`,
+      [body, noteId, req.userId],
+    );
+    if (!row) throw notFound("Note not found");
+    res.json(mapNote(row));
+  }),
+);
+
 notesRouter.delete(
   "/notes/:noteId",
   asyncHandler(async (req, res) => {

@@ -12,6 +12,7 @@ export interface ApplicationPayload {
     tags?: string[];
     nextFollowUp?: string | null;
     isFavorite?: boolean;
+    note?: string | null;
 }
 
 export class ApplicationsClient {
@@ -44,5 +45,13 @@ export class ApplicationsClient {
 
     async delete(id: string): Promise<APIResponse> {
         return this.request.delete(`/api/applications/${id}`);
+    }
+
+    async editNotes(noteId: string, notes: string): Promise<APIResponse> {
+        return this.request.patch(`/api/notes/${noteId}`, { data: { body: notes } });
+    }
+
+    async deleteNotes(id: string): Promise<APIResponse> {
+        return this.request.delete(`/api/applications/${id}/notes`);
     }
 }
