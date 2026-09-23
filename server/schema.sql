@@ -21,6 +21,7 @@ create table if not exists applications (
     check (status in ('wishlist', 'applied', 'interviewing', 'offer', 'rejected')),
   source text not null default 'other'
     check (source in ('linkedin', 'referral', 'company_website', 'job_board', 'recruiter', 'other')),
+  is_favorite boolean not null default false,
   tags text[] not null default '{}',
   next_follow_up date,
   created_at timestamptz not null default now(),
@@ -38,6 +39,8 @@ alter table applications alter column source set not null;
 alter table applications drop constraint if exists applications_source_check;
 alter table applications add constraint applications_source_check
   check (source in ('linkedin', 'referral', 'company_website', 'job_board', 'recruiter', 'other'));
+
+alter table applications add column if not exists is_favorite boolean not null default false;
 
 create index if not exists applications_user_id_idx on applications(user_id);
 create index if not exists applications_status_idx on applications(user_id, status);

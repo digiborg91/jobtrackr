@@ -11,6 +11,7 @@ export interface ApplicationPayload {
     source?: string;
     tags?: string[];
     nextFollowUp?: string | null;
+    isFavorite?: boolean;
 }
 
 export class ApplicationsClient {
@@ -35,6 +36,10 @@ export class ApplicationsClient {
 
     async updateStatus(id: string, status: string): Promise<APIResponse> {
         return this.request.patch(`/api/applications/${id}/status`, { data: { status } });
+    }
+
+    async updateFavorite(id: string, isFavorite: boolean): Promise<APIResponse> {
+        return this.request.patch(`/api/applications/${id}/favorite`, { data: { isFavorite } });
     }
 
     async delete(id: string): Promise<APIResponse> {

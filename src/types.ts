@@ -63,6 +63,7 @@ export interface JobApplication {
   location: string | null;
   status: ApplicationStatus;
   source: ApplicationSource;
+  isFavorite: boolean;
   tags: string[];
   nextFollowUp: string | null;
   createdAt: string;
