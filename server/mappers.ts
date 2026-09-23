@@ -14,6 +14,7 @@ interface ApplicationRow {
   location: string | null;
   status: string;
   source: string;
+  is_favorite: boolean;
   tags: string[];
   next_follow_up: string | null;
   created_at: Date | string;
@@ -42,6 +43,7 @@ export function mapApplication(row: ApplicationRow) {
     location: row.location,
     status: row.status,
     source: row.source,
+    isFavorite: row.is_favorite,
     tags: row.tags,
     nextFollowUp: row.next_follow_up,
     createdAt: new Date(row.created_at).toISOString(),

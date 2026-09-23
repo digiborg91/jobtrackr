@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Calendar, ExternalLink, GripVertical } from "lucide-react";
+import { Calendar, ExternalLink, GripVertical, Star } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { SOURCE_LABELS } from "@/types";
@@ -16,10 +16,11 @@ function formatSalary(app: JobApplication) {
 interface ApplicationCardProps {
   application: JobApplication;
   onOpen: (application: JobApplication) => void;
+  onToggleFavorite: (id: string, isFavorite: boolean) => void;
   dragging?: boolean;
 }
 
-export function ApplicationCard({ application, onOpen, dragging }: ApplicationCardProps) {
+export function ApplicationCard({ application, onOpen, onToggleFavorite, dragging }: ApplicationCardProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: application.id,
     data: { status: application.status },
@@ -50,6 +51,22 @@ export function ApplicationCard({ application, onOpen, dragging }: ApplicationCa
           className="flex-1 text-left text-sm font-semibold leading-snug hover:underline cursor-pointer"
         >
           {application.role}
+        </button>
+        <button
+          type="button"
+          data-testid="application-favorite-toggle"
+          aria-label={application.isFavorite ? `Unfavorite ${application.role}` : `Favorite ${application.role}`}
+          aria-pressed={application.isFavorite}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(application.id, !application.isFavorite);
+          }}
+          className={cn(
+            "shrink-0 rounded p-1 outline-none",
+            application.isFavorite ? "text-yellow-500" : "text-muted-foreground",
+          )}
+        >
+          <Star className="h-4 w-4" fill={application.isFavorite ? "currentColor" : "none"} />
         </button>
         <button
           type="button"

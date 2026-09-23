@@ -104,8 +104,7 @@ test.describe('Applications API', () => {
         const deleteResponse = await applicationsClient.delete(created.id);
         expect(deleteResponse.status()).toBe(204);
 
-        // Don't just trust the 204 — confirm the record is actually gone by
-        // fetching it separately and expecting a 404, not a 200.
+        // Ensure the record is actually gone by trying to fetch it 
         const getResponse = await applicationsClient.get(created.id);
         expect(getResponse.status()).toBe(404);
     })
@@ -204,5 +203,31 @@ test.describe('Applications API', () => {
                 await applicationsClient.delete(app.id);
             }
         }
+    })
+
+    test( 'User can Toggle favourite of a existing Application', async ({ apiContext, testApplication }) => {
+        // Create a application
+        const applicationsClient = new ApplicationsClient(apiContext);
+
+        const createResponse = await applicationsClient.create({
+            company: testApplication.company,
+            role: testApplication.role,
+            source: testApplication.source,
+            isFavorite: false
+            });
+    
+        //Assert the created application has defaulted isFavorite to false
+        const responseBody = await createResponse.json();
+        expect(responseBody.isFavorite).toBe(false);
+
+        //Update the application to favorite - update the patch with an optional parameter isFavorite true
+        const updateFavoriteResponse = await applicationsClient.updateFavorite(responseBody.id, true);//Update
+        const updateFavoriteBody = await updateFavoriteResponse.json(); //Capture the response 
+            expect(updateFavoriteBody.isFavorite).toBe(true); // Assert ? 
+
+
+
+
+
     })
 });

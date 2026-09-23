@@ -19,6 +19,7 @@ export interface ApplicationInput {
   location?: string | null;
   status?: ApplicationStatus;
   source: ApplicationSource;
+  isFavorite?: boolean;
   tags?: string[];
   nextFollowUp?: string | null;
 }
@@ -44,5 +45,7 @@ export const applicationsApi = {
     api.patch<JobApplication>(`/applications/${id}`, input),
   updateStatus: (id: string, status: ApplicationStatus) =>
     api.patch<JobApplication>(`/applications/${id}/status`, { status }),
+  updateFavorite: (id: string, isFavorite: boolean) =>
+    api.patch<JobApplication>(`/applications/${id}/favorite`, { isFavorite }),
   remove: (id: string) => api.delete<void>(`/applications/${id}`),
 };
