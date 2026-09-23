@@ -61,6 +61,32 @@ export function KanbanBoard({ applications, queryKey, onOpen, onAdd }: KanbanBoa
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
+  const toggleFavoriteMutation = useMutation({
+    mutationFn: ({ id, isFavorite }: { id: string; isFavorite: boolean }) =>
+      applicationsApi.updateFavorite(id, isFavorite),
+    onMutate: async ({ id, isFavorite }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData<Paginated<JobApplication>>(queryKey);
+      queryClient.setQueryData<Paginated<JobApplication>>(queryKey, (old) =>
+        old ? { ...old, items: old.items.map((a) => (a.id === id ? { ...a, isFavorite } : a)) } : old,
+      );
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
+      toast({
+        variant: "destructive",
+        title: "Couldn't update favorite",
+        description: "Please try again.",
+      });
+    },
+    onSuccess: (updated) => {
+      queryClient.setQueryData<Paginated<JobApplication>>(queryKey, (old) =>
+        old ? { ...old, items: old.items.map((a) => (a.id === updated.id ? updated : a)) } : old,
+      );
+    },
+  });
+
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: ApplicationStatus }) =>
       applicationsApi.updateStatus(id, status),
@@ -152,12 +178,13 @@ export function KanbanBoard({ applications, queryKey, onOpen, onAdd }: KanbanBoa
               .filter((a): a is JobApplication => Boolean(a))}
             onOpen={onOpen}
             onAdd={onAdd}
+            onToggleFavorite={(id, isFavorite) => toggleFavoriteMutation.mutate({ id, isFavorite })}
           />
         ))}
       </div>
       <DragOverlay>
         {activeApplication ? (
-          <ApplicationCard application={activeApplication} onOpen={() => {}} dragging />
+          <ApplicationCard application={activeApplication} onOpen={() => {}} onToggleFavorite={() => {}} dragging />
         ) : null}
       </DragOverlay>
     </DndContext>

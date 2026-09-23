@@ -30,6 +30,7 @@ const applicationInputSchema = z.object({
   location: z.string().trim().nullable().optional(),
   status: z.enum(STATUSES).optional(),
   source: z.enum(SOURCES, { required_error: "Source is required", invalid_type_error: "Source is required" }),
+  isFavorite: z.boolean().optional(),
   tags: z.array(z.string().trim().min(1)).optional(),
   nextFollowUp: z.string().date().nullable().optional(),
 });
@@ -37,6 +38,8 @@ const applicationInputSchema = z.object({
 const applicationUpdateSchema = applicationInputSchema.partial();
 
 const statusUpdateSchema = z.object({ status: z.enum(STATUSES) });
+
+const favoriteUpdateSchema = z.object({ isFavorite: z.boolean() });
 
 interface ApplicationRow {
   id: string;
@@ -48,6 +51,7 @@ interface ApplicationRow {
   location: string | null;
   status: string;
   source: string;
+  is_favorite: boolean;
   tags: string[];
   next_follow_up: string | null;
   created_at: string;
@@ -164,6 +168,22 @@ applicationsRouter.patch(
 );
 
 applicationsRouter.patch(
+  "/:id/favorite",
+  validateBody(favoriteUpdateSchema),
+  asyncHandler(async (req, res) => {
+    const applicationId = String(req.params.id);
+    await findOwnedApplication(applicationId, req.userId!);
+    const { isFavorite } = req.body as z.infer<typeof favoriteUpdateSchema>;
+
+    const row = await queryOne<ApplicationRow>(
+      "update applications set is_favorite = $1, updated_at = now() where id = $2 returning *",
+      [isFavorite, applicationId],
+    );
+    res.json(mapApplication(row!));
+  }),
+);
+
+applicationsRouter.patch(
   "/:id",
   validateBody(applicationUpdateSchema),
   asyncHandler(async (req, res) => {
@@ -180,6 +200,7 @@ applicationsRouter.patch(
       location: input.location,
       status: input.status,
       source: input.source,
+      is_favorite: input.isFavorite,
       tags: input.tags,
       next_follow_up: input.nextFollowUp,
     };

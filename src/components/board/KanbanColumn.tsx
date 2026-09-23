@@ -20,9 +20,10 @@ interface KanbanColumnProps {
   applications: JobApplication[];
   onOpen: (application: JobApplication) => void;
   onAdd: (status: ApplicationStatus) => void;
+  onToggleFavorite: (id: string, isFavorite: boolean) => void;
 }
 
-export function KanbanColumn({ status, applications, onOpen, onAdd }: KanbanColumnProps) {
+export function KanbanColumn({ status, applications, onOpen, onAdd, onToggleFavorite }: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
 
   return (
@@ -55,7 +56,12 @@ export function KanbanColumn({ status, applications, onOpen, onAdd }: KanbanColu
       >
         <SortableContext items={applications.map((a) => a.id)} strategy={verticalListSortingStrategy}>
           {applications.map((application) => (
-            <ApplicationCard key={application.id} application={application} onOpen={onOpen} />
+            <ApplicationCard
+              key={application.id}
+              application={application}
+              onOpen={onOpen}
+              onToggleFavorite={onToggleFavorite}
+            />
           ))}
         </SortableContext>
         {applications.length === 0 && (
