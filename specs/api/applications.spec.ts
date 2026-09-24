@@ -274,7 +274,7 @@ test.describe('Applications API', () => {
 
     })
 
-    test('Ensure a user cannot edit notes for an application of another user', async ({ apiContext, testApplication }) => {
+    test('Ensure a user cannot edit notes for an application of another user', async ({ apiContext, testApplication, baseURL }) => {
         const applicationsClient = new ApplicationsClient(apiContext);
 
         const createResponse = await applicationsClient.create({
@@ -294,7 +294,7 @@ test.describe('Applications API', () => {
 
         
         // Register + log in as a second, completely separate user
-        const otherUserContext = await playwrightRequest.newContext({ baseURL: 'http://localhost:5174' });
+        const otherUserContext = await playwrightRequest.newContext({ baseURL });
         await otherUserContext.post('/api/auth/register', {
             data: { name: 'Other User', email: `other-${Date.now()}@example.com`, password: 'password123' },
         });
