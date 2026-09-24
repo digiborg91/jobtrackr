@@ -42,6 +42,30 @@ jobs:
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
+      # A PR check has nothing deployed yet on production - it's still
+      # testing the OLD code otherwise. Point it at that PR's own Netlify
+      # Deploy Preview instead, which Netlify names predictably from the PR
+      # number. Pushes to main (post-merge) fall through to
+      # playwright.config.ts's default (production) instead.
+      - name: Set test target
+        if: github.event_name == 'pull_request'
+        run: echo "BASE_URL=https://deploy-preview-${{ github.event.pull_request.number }}--job-tracker-uk.netlify.app" >> "$GITHUB_ENV"
+
+      - name: Wait for Netlify deploy preview
+        if: github.event_name == 'pull_request'
+        run: |
+          for i in $(seq 1 36); do
+            status=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL")
+            if [ "$status" = "200" ]; then
+              echo "Deploy preview is up ($BASE_URL)."
+              exit 0
+            fi
+            echo "Waiting for deploy preview ($status)... attempt $i/36"
+            sleep 10
+          done
+          echo "Deploy preview never came up after 6 minutes: $BASE_URL"
+          exit 1
+
       - name: Run API tests
         run: npm run e2e:api
 
