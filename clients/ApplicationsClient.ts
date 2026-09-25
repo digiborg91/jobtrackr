@@ -54,4 +54,9 @@ export class ApplicationsClient {
     async deleteNotes(id: string): Promise<APIResponse> {
         return this.request.delete(`/api/applications/${id}/notes`);
     }
+
+    async bulkUpdateStatus(ids: string[], status: string): Promise<APIResponse> {
+        return this.request.post('/api/applications/bulk-status', { data: { ids, status } });
+    
+    }
 }
