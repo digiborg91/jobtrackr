@@ -323,9 +323,164 @@ test.describe('Applications API', () => {
         expect(note.body).toBe(testApplication.notes);
         expect(noteResponse.status()).toBe(201);
 
-        //Application is added.  now update a non existant application adn return 403 
+        //Application is added.  now update a non-existent application and return 500
         const updateNotesResponse = await applicationsClient.editNotes("non-existent-id", "Updated Notes");
         expect(updateNotesResponse.status()).toBe(500);
 
+    })
+
+    test('Ensure a user can bulk move applications to a new status', async ({ apiContext, testApplication }) => {
+
+        //Create a few applications at wishlist status
+        const applicationsClient = new ApplicationsClient(apiContext);
+
+        const createResponse1 = await applicationsClient.create({
+            company: testApplication.company,
+            role: testApplication.role,
+            source: testApplication.source,
+        });
+        const responsebody1 = await createResponse1.json();
+
+        const createResponse2 = await applicationsClient.create({
+            company: testApplication.company,
+            role: testApplication.role,
+            source: testApplication.source,
+        });
+        const responsebody2 = await createResponse2.json();
+
+        const createResponse3 = await applicationsClient.create({
+            company: testApplication.company,
+            role: testApplication.role,
+            source: testApplication.source,
+        });
+        const responsebody3 = await createResponse3.json();
+        
+        //Bulk update the applications to a new status
+        const ids = [responsebody1.id, responsebody2.id, responsebody3.id];
+        const bulkUpdateResponse = await applicationsClient.bulkUpdateStatus(ids, "applied");
+        expect(bulkUpdateResponse.status()).toBe(200);
+
+        const bulkBody = await bulkUpdateResponse.json();
+        expect(bulkBody.updated).toBe(ids.length);
+        expect(bulkBody.items).toHaveLength(ids.length);
+            for (const item of bulkBody.items) {
+                expect(item.status).toBe("applied");
+            }
+
+        for (const id of ids) {
+            const getResponse = await applicationsClient.get(id);
+            const fetched = await getResponse.json();
+            expect(fetched.status).toBe("applied");
+        }
+    })
+
+    test('Ensure a user cannot bulk move applications to a new status with invalid ids. 400 returned', async ({ apiContext, testApplication }) => {
+
+        //Create a few applications at wishlist status
+        const applicationsClient = new ApplicationsClient(apiContext);    
+        
+        const createResponse1 = await applicationsClient.create({
+            company: testApplication.company,
+            role: testApplication.role,
+            source: testApplication.source,
+        });
+        const responsebody1 = await createResponse1.json();
+
+        const createResponse2 = await applicationsClient.create({
+            company: testApplication.company,
+            role: testApplication.role,
+            source: testApplication.source,
+        });
+        const responsebody2 = await createResponse2.json();
+
+        //Bulk update the applications to a new status with invalid ids
+        const ids = [responsebody1.id, responsebody2.id, "invalid-id"];
+        const bulkUpdateResponse = await applicationsClient.bulkUpdateStatus(ids, "applied");
+        expect(bulkUpdateResponse.status()).toBe(400);
+        
+        //Assert both of this test's applications still exist. Only count our own ids: the account is
+        //shared, so other tests' applications can be in the list at the same time.
+        const listResponse = await applicationsClient.list({ pageSize: '100' });
+        const listBody = await listResponse.json();
+        const mine = listBody.items.filter((item: { id: string }) => [responsebody1.id, responsebody2.id].includes(item.id));
+        expect(mine).toHaveLength(2);
+
+        // Add assert that the applications are still in the original status and not updated
+        for (const id of [responsebody1.id, responsebody2.id]) {
+            const getResponse = await applicationsClient.get(id);
+            const fetched = await getResponse.json();
+            expect(fetched.status).toBe("wishlist");
+        }
+
+    })
+
+    test('Ensure ids can only hold 50 entries -> 51 returns 400', async ({ apiContext }) => {
+        const applicationsClient = new ApplicationsClient(apiContext);
+
+        // 49 and 50 pass validation (404: the fake ids don't exist); 51 is rejected for size (400).
+        const cases = [
+            { size: 49, expected: 404 },
+            { size: 50, expected: 404 },
+            { size: 51, expected: 400 },
+        ];
+
+        for (const { size, expected } of cases) {
+            const ids = Array.from({ length: size }, () => faker.string.uuid());
+            const response = await applicationsClient.bulkUpdateStatus(ids, "applied");
+            expect(response.status(), `${size} ids`).toBe(expected);
+        }
+    })
+
+    test('Ensure duplicated IDs are treated as one.', async ({ apiContext, testApplication }) => {
+        const applicationsClient = new ApplicationsClient(apiContext);
+        const createResponse = await applicationsClient.create({
+            company: testApplication.company,
+            role: testApplication.role,
+            source: testApplication.source,
+        });
+        const created = await createResponse.json();
+
+        const ids = [created.id, created.id, created.id];
+        const response = await applicationsClient.bulkUpdateStatus(ids, "applied");
+        expect(response.status()).toBe(200);
+        const body = await response.json();
+        expect(body.updated).toBe(1);
+        expect(body.items).toHaveLength(1);
+        expect(body.items[0].id).toBe(created.id);
+        expect(body.items[0].status).toBe("applied");
+    })
+
+    test('Ensure if any listed id does not exist, the whole request returns 404 & nothing is updated', async ({ apiContext, testApplication }) => {
+        const applicationsClient = new ApplicationsClient(apiContext)
+        const createResponse = await applicationsClient.create({
+            company: testApplication.company,
+            role: testApplication.role,
+            source: testApplication.source,
+        });
+        const created = await createResponse.json();
+        
+        const missingId = faker.string.uuid()
+        const bulkResponse = await applicationsClient.bulkUpdateStatus([created.id, missingId], "applied");
+        expect(bulkResponse.status()).toBe(404)
+
+        const getResponse = await applicationsClient.get(created.id)
+        const fetched = await getResponse.json();
+        expect(fetched.status).toBe("wishlist");
+    })
+
+    test('Ensure a no session cookie returns a 401 error', async ({ baseURL }) => {
+        const unknownContext = await playwrightRequest.newContext({ baseURL });
+        const unknownClient = await new ApplicationsClient(unknownContext);
+
+        const response = await unknownClient.bulkUpdateStatus([faker.string.uuid()], "applied");
+        expect(response.status()).toBe(401)
+
+        //assert no id was created
+        const body = await response.json()
+        expect(body.error.code).toBe("unauthorized");
+        expect(body).not.toHaveProperty("id");
+
+        //dispose
+        await unknownContext.dispose();
     })
 });

@@ -39,6 +39,14 @@ const applicationUpdateSchema = applicationInputSchema.partial();
 
 const statusUpdateSchema = z.object({ status: z.enum(STATUSES) });
 
+const bulkStatusSchema = z.object({
+  ids: z
+    .array(z.string().uuid("Each id must be a valid UUID"))
+    .min(1, "At least one id is required")
+    .max(50, "At most 50 ids at a time"),
+  status: z.enum(STATUSES),
+});
+
 const favoriteUpdateSchema = z.object({ isFavorite: z.boolean() });
 
 interface ApplicationRow {
@@ -131,6 +139,32 @@ applicationsRouter.post(
     );
 
     res.status(201).json(mapApplication(row!));
+  }),
+);
+
+applicationsRouter.post(
+  "/bulk-status",
+  validateBody(bulkStatusSchema),
+  asyncHandler(async (req, res) => {
+    const { ids, status } = req.body as z.infer<typeof bulkStatusSchema>;
+    const uniqueIds = [...new Set(ids)];
+
+    // One atomic statement: the update only applies if the caller owns every
+    // id, so a single bad id can never leave the batch half-updated.
+    const rows = await query<ApplicationRow>(
+      `with owned as (
+         select id from applications where id = any($2::uuid[]) and user_id = $3
+       )
+       update applications
+       set status = $1, updated_at = now()
+       where id in (select id from owned)
+         and (select count(*) from owned) = $4
+       returning *`,
+      [status, uniqueIds, req.userId, uniqueIds.length],
+    );
+
+    if (rows.length !== uniqueIds.length) throw notFound("One or more applications not found");
+    res.json({ updated: rows.length, items: rows.map(mapApplication) });
   }),
 );
 
