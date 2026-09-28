@@ -2,6 +2,16 @@
 
 Quick reference for getting the app and its Playwright suite running on `localhost`, without touching production.
 
+## Quick start
+
+```
+npm run local:up      # Docker + Postgres + schema + both dev servers + test user
+npm run e2e:local     # run the suite against it
+npm run local:down    # stop the servers and the DB container (data is kept)
+```
+
+`local:up` is safe to re-run — anything already running is left alone — and takes about a minute and a half cold, because `netlify dev` is slow to start. Server logs land in `.local-dev/`. If it fails, the error says which step and where to look. The sections below are what it automates, for when you need to do a step by hand or debug one.
+
 ## 1. Local database (one-time setup, then reused)
 
 ```

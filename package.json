@@ -10,6 +10,8 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "db:migrate": "node --env-file=.env scripts/migrate.mjs",
+    "local:up": "node --env-file=.env scripts/local-up.mjs",
+    "local:down": "node scripts/local-down.mjs",
     "e2e": "playwright test",
     "e2e:browser": "playwright test --project=ui",
     "e2e:headed": "playwright test --project=ui --headed",

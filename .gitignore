@@ -20,6 +20,9 @@ dist-ssr
 # Netlify
 .netlify/
 
+# Local dev stack logs (npm run local:up)
+.local-dev/
+
 # Playwright
 /test-results/
 /playwright-report/
