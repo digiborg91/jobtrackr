@@ -14,6 +14,20 @@ const SOURCES = ["linkedin", "referral", "company_website", "job_board", "recrui
 
 const listQuerySchema = z.object({
   status: z.enum(STATUSES).optional(),
+  source: z.enum(SOURCES).optional(),
+  // Query strings are text, so "false" must not go through Boolean() (that makes it true).
+  favorite: z
+    .enum(["true", "false"])
+    .transform((value) => value === "true")
+    .optional(),
+  // salary_min is a 32-bit integer column; a larger value would crash the query instead of failing validation.
+  minSalary: z
+    .string()
+    .regex(/^\d+$/, "minSalary must be a whole number")
+    .transform(Number)
+    .pipe(z.number().max(2147483647, "minSalary is too large"))
+    .optional(),
+  followUpBefore: z.string().date().optional(),
   search: z.string().trim().min(1).optional(),
   tag: z.string().trim().min(1).optional(),
   sort: z.enum(["newest", "oldest", "company"]).default("newest"),
@@ -85,6 +99,22 @@ applicationsRouter.get(
     if (filters.tag) {
       params.push(filters.tag);
       conditions.push(`$${params.length} = any(tags)`);
+    }
+    if (filters.source) {
+      params.push(filters.source);
+      conditions.push(`source = $${params.length}`);
+    }
+    if (filters.favorite !== undefined) {
+      params.push(filters.favorite);
+      conditions.push(`is_favorite = $${params.length}`);
+    }
+    if (filters.minSalary !== undefined) {
+      params.push(filters.minSalary);
+      conditions.push(`salary_min >= $${params.length}`);
+    }
+    if (filters.followUpBefore) {
+      params.push(filters.followUpBefore);
+      conditions.push(`next_follow_up <= $${params.length}::date`);
     }
 
     const whereClause = conditions.join(" and ");
